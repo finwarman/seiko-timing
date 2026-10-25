@@ -7,6 +7,9 @@ import { RateQuality } from './dist/rate.mjs';
 import { createAnalyzer, TimingEngine, HistoryMode, FilterMode } from './dist/watch-engine.mjs';
 import { InputChannel, selectChannel, channelLevels } from './dist/channels.mjs';
 import { timingStrip } from './dist/timing-strip.mjs';
+import { drawVintageMeter } from './dist/vintage-meter.mjs';
+import { vintageSweep } from './dist/vintage-sweep.mjs';
+import { StableHistory, drawStableHistory } from './dist/stable-history.mjs';
 
 const Job = Object.freeze({ Analyze: 'analyze', Demo: 'demo' });
 const EMPTY = String.fromCodePoint(0x2013);
@@ -120,7 +123,7 @@ function makeHarness() {
     String, Object, Array, Date, Error, Blob, URL, setTimeout, clearTimeout,
     setInterval: callback=>intervals.push(callback),
     performance: { now: () => now }, crypto: { randomUUID: () => 'fixture-id' },
-    Quality, RateQuality, TimingEngine, HistoryMode, FilterMode, InputChannel, selectChannel, channelLevels, timingStrip, amplitudeFromLift, Worker: FakeWorker, MicCapture: FakeMic,
+    Quality, RateQuality, TimingEngine, HistoryMode, FilterMode, InputChannel, selectChannel, channelLevels, timingStrip, drawVintageMeter, vintageSweep, StableHistory, drawStableHistory, amplitudeFromLift, Worker: FakeWorker, MicCapture: FakeMic,
     readAudio: file => file.read,
     localStorage: { getItem: () => null, setItem() {} }, navigator: {},
     document: { getElementById: element, createElement: () => makeElement(), querySelectorAll: () => [] },
@@ -257,6 +260,7 @@ test('a repeatable waveform rate does not unlock beat error or amplitude', async
   assert.equal(h.element('metric-beat').textContent,EMPTY);
   assert.equal(h.element('metric-amp').textContent,EMPTY);
   assert.equal(h.element('save-baseline').disabled,false);
+  assert.match(h.element('history-summary').textContent,/1 stable readings/);
 });
 
 test('disagreeing waveform windows explain why rate remains blank', async () => {
@@ -271,6 +275,7 @@ test('disagreeing waveform windows explain why rate remains blank', async () => 
   assert.match(h.element('quality').textContent,/rate not steady/);
   assert.match(h.element('feedback').textContent,/529 s\/day/);
   assert.equal(h.element('save-baseline').disabled,true);
+  assert.equal(h.element('history-summary').textContent,'Waiting for stable readings');
 });
 
 test('tg supplies rate and beat error while amplitude waits for lift-angle confirmation', async () => {
@@ -369,6 +374,7 @@ test('lost lock dims the last valid metrics without enabling baseline or guidanc
   const metrics=['bph','rate','beat','amp'];
   const previous=metrics.map(metric=>h.element(`metric-${metric}`).textContent);
   assert.ok(previous.every(value=>value!==EMPTY));
+  assert.match(h.element('history-summary').textContent,/1 stable readings/);
   assert.equal(h.element('save-baseline').disabled,false);
   h.advance(3000);
   h.microphones[0].push(new Float32Array(NATIVE_RATE),NATIVE_RATE,watchAudio.length);await settle();
@@ -380,6 +386,7 @@ test('lost lock dims the last valid metrics without enabling baseline or guidanc
   }
   assert.equal(h.element('save-baseline').disabled,true);
   assert.match(h.element('adjustment').textContent,/stable baseline first/);
+  assert.match(h.element('history-summary').textContent,/1 stable readings/);
   h.advance(7000);
   assert.equal(h.element('note-rate').textContent,'Stale · 10s ago');
   h.microphones[0].push(new Float32Array(NATIVE_RATE),NATIVE_RATE,watchAudio.length+NATIVE_RATE);await settle();

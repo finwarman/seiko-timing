@@ -4,6 +4,9 @@ import {Quality,amplitudeFromLift} from './dsp.mjs';
 import {RateQuality} from './rate.mjs';
 import {TimingEngine,HistoryMode,FilterMode} from './watch-engine.mjs';
 import {timingStrip} from './timing-strip.mjs';
+import {drawVintageMeter} from './vintage-meter.mjs';
+import {vintageSweep} from './vintage-sweep.mjs';
+import {StableHistory,drawStableHistory} from './stable-history.mjs';
 
 const Source=Object.freeze({None:'none',Mic:'microphone',File:'recording',Demo:'demo'});
 const Job=Object.freeze({Analyze:'analyze',Demo:'demo'});
@@ -13,8 +16,13 @@ const Metric=Object.freeze({Bph:'bph',Rate:'rate',Beat:'beat',Amp:'amp'});
 const MetricHistory=Object.freeze({Clear:'clear',Keep:'keep'});
 const EMPTY_METRIC='–';
 const STALE_REFRESH_MS=1000;
+const DIAL_FRAME_MS=50;
+const SPECTRUM_FRAME_MS=100;
+let lastDialFrame=0;
+let spectrumPaint=null;
 const lastMetrics=new Map();
 const LOG_KEY='seiko-watch-bench-log-v1';
+const HISTORY_KEY='seiko-stable-history-v1';
 const WINDOW_SECONDS=60;
 const RETAIN_SECONDS=65;
 const LIVE_ANALYSIS_SECONDS=32;
@@ -57,6 +65,14 @@ let traceHistory=[];
 let traceOrigin=null;
 let traceEnd=0;
 let traceGeneration=0;
+let vintageGeneration=0;
+const vintageMarks=new Map();
+let stableHistory=new StableHistory();
+const demoHistory=new StableHistory();
+let historyKey='';
+let historyView=[];
+let historySaved=true;
+try {const saved=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');if(Array.isArray(saved))stableHistory=new StableHistory(saved);} catch { /* History is optional when storage is unavailable. */ }
 try { const saved=JSON.parse(localStorage.getItem(LOG_KEY)||'[]'); if(Array.isArray(saved)) log=saved.slice(0,50); } catch { /* Storage is optional in private browsing. */ }
 
 worker.onmessage=event=>{
@@ -78,7 +94,7 @@ spectrumWorker.onmessage=event=>{
   data.columns.forEach((values,index)=>spectrumColumns.push({values,time:data.start+(index+0.5)*data.hopSeconds}));
   const cutoff=(spectrumColumns.at(-1)?.time||0)-10.1;
   spectrumColumns=spectrumColumns.filter(column=>column.time>=cutoff);
-  drawSpectrogram();
+  if(spectrumPaint===null)spectrumPaint=setTimeout(()=>{spectrumPaint=null;drawSpectrogram();},SPECTRUM_FRAME_MS);
 };
 
 function runJob(type,data) {
@@ -190,6 +206,7 @@ async function analyse() {
     if(token!==generation) return;
     measurement=result.result;measurementAt=capturedAt;
     recordTrace(measurement,captureEnd);
+    recordHistory();
     renderMetrics();drawTrace();drawPulses();
   } catch(error) { if(token===generation) showError(error.message); }
   finally {busy=false;if(analysisQueued){analysisQueued=false;void analyse();}}
@@ -243,6 +260,7 @@ function updateSource() {
   $('capture-rate').textContent=`Capture ${sourceRate?formatHz(sourceRate):'unknown'} / processing ${sampleRate?formatHz(sampleRate):'–'}`;
   $('spectrogram-source').textContent=source===Source.Mic?'Live · continuous analysis':source===Source.None?'No audio':'Recorded audio';
   $('download-audio').disabled=!sampleCount;
+  drawHistory();
 }
 
 async function useRecording(samples,rate,kind,name,nativeRate,request,channels=[]) {
@@ -345,7 +363,7 @@ function renderMetrics() {
   else if(Math.abs(timing.rate)>LARGE_RATE) $('adjustment').textContent=`${rateText(timing.rate)} s/day is a large error. Check power and intermittent stopping before fine regulation. If it persists at a regulator limit, arrange inspection.`;
   else if(!$('identified').checked) $('adjustment').textContent='Confirm the regulator pointer and its scale before making a change.';
   else if(Math.abs(timing.rate)<5) $('adjustment').textContent='This estimate is close to zero. Confirm it over a full day and in other positions before chasing a smaller change.';
-  else $('adjustment').textContent=`${source===Source.Demo?'Demo guidance: ':''}${timing.rate<0?'Slow: move the scale pointer a tiny amount toward +.':'Fast: move the scale pointer a tiny amount toward −.'} The two-dot end moves opposite the pointer. Stop touching the watch, then take a fresh reading.`;
+  else $('adjustment').textContent=`${source===Source.Demo?'Demo guidance: ':''}${timing.rate<0?'Slow: the scale pointer needs to move toward + (faster).':'Fast: the scale pointer needs to move toward − (slower).'} Follow the pointer on its scale, not left/right at the two-dot end. Stop touching the watch, then take a fresh reading.`;
 }
 
 function calcAmplitude() {
@@ -419,6 +437,15 @@ function refreshStaleAges() {
   for(const metric of lastMetrics.keys()) refreshMetricAge(metric);
 }
 
+function animateDial(now) {
+  if(running && now-lastDialFrame>=DIAL_FRAME_MS) {
+    lastDialFrame=now;
+    const rect=$('vintage-meter').getBoundingClientRect();
+    if(rect.bottom>0 && rect.top<window.innerHeight)drawVintage();
+  }
+  requestAnimationFrame(animateDial);
+}
+
 function canvasContext(canvas) {
   const rect=canvas.getBoundingClientRect();
   const ratio=window.devicePixelRatio||1;
@@ -451,6 +478,7 @@ function recordTrace(value,captureEnd) {
 }
 
 function drawTrace() {
+  drawVintage();
   const {ctx,w,h}=canvasContext($('trace'));ctx.clearRect(0,0,w,h);
   const seconds=Number($('trace-window').value)||60;
   const spanMs=Number($('trace-span').value)||20;
@@ -464,6 +492,74 @@ function drawTrace() {
   const points=timingStrip(traceHistory,{origin:traceOrigin,end:traceEnd,seconds,spanMs,bph:Number($('bph').value)});
   for(const point of points) {ctx.fillStyle=point.side===0?'#8fb5cb':'#dbc28e';ctx.fillRect(left+point.x*(right-left)-1,top+point.y*(bottom-top)-1,2.5,2.5);}
   if(![Quality.Usable,Quality.Stable].includes(measurement?.quality)) {ctx.fillStyle='#dbc28e';ctx.fillText('Timing lock lost; no new marks',left+12,top+27);}
+}
+
+function drawVintage() {
+  const {ctx,w,h}=canvasContext($('vintage-meter'));
+  const seconds=Number($('trace-window').value)||60,spanMs=Number($('trace-span').value)||20;
+  const metrics=[{key:Metric.Bph,label:'BPH',unit:''},{key:Metric.Rate,label:'Rate',unit:'s/day'},{key:Metric.Beat,label:'Beat error',unit:'ms'},{key:Metric.Amp,label:'Amplitude',unit:'°'}].map(metric=>{
+    const node=$(`metric-${metric.key}`);
+    return {...metric,value:node.textContent,stale:node.dataset.stale==='true'};
+  });
+  const correction=1+(Number($('calibration').value)||0)/1e6;
+  const end=running && sampleRate?totalCount/sampleRate/correction:traceEnd;
+  if(vintageGeneration!==generation) {vintageMarks.clear();vintageGeneration=generation;}
+  const sweepStart=Math.floor(Math.max(0,end-1e-9)/seconds)*seconds;
+  for(const point of traceHistory) if(!vintageMarks.has(point.index))vintageMarks.set(point.index,{...point});
+  for(const [index,point] of vintageMarks) if(point.time<sweepStart)vintageMarks.delete(index);
+  const sweep=vintageSweep(traceOrigin===null?[]:[...vintageMarks.values()],{origin:traceOrigin??0,end,seconds,spanMs,bph:Number($('bph').value)});
+  const locked=[Quality.Usable,Quality.Stable].includes(measurement?.quality);
+  const rate=Number(metrics[1].value.replace('−','-'));
+  drawVintageMeter(ctx,w,h,{points:sweep.points,progress:sweep.progress,metrics,rate,locked,stale:metrics[1].stale,scale:Number($('vintage-range').value)||50});
+  $('vintage-scale').textContent=`${seconds} s · ${spanMs} ms`;
+  $('vintage-status').textContent=`${source===Source.Demo?'Demo · ':source===Source.Mic?running?'Live · ':'Stopped · ':''}${metrics[1].stale?$('note-rate').textContent:$('quality').textContent}${sampleRate?` · ${formatHz(sampleRate)}`:''}`;
+  $('vintage-meter').setAttribute('aria-label',`Timing dial. ${metrics.map(metric=>`${metric.label} ${metric.value} ${metric.unit}${metric.stale?', stale':''}`).join('. ')}. ${sweep.points.length} measured beat marks. Red cursor sweeps upward; marks stay fixed.`);
+}
+
+function currentHistory() { return source===Source.Demo?demoHistory:stableHistory; }
+
+function persistHistory() {
+  try {localStorage.setItem(HISTORY_KEY,JSON.stringify(stableHistory.points));historySaved=true;}
+  catch {historySaved=false;}
+}
+
+function recordHistory() {
+  const history=currentHistory(),key=`${source}:${generation}:${$('position').value}`;
+  if(key!==historyKey) {history.break();historyKey=key;}
+  const timing=selectRate(measurement);
+  if(!timing?.stable || measurement.duration<MIN_BASELINE_SECONDS || measurement.clippedRatio>CLIP_LIMIT) {history.break();drawHistory();return;}
+  const at=Date.now()-Math.max(0,performance.now()-measurementAt);
+  const added=history.add({at,rate:timing.rate,beatError:measurement.beatError,sourceName,position:$('position').value});
+  if(added && source!==Source.Demo)persistHistory();
+  drawHistory();
+}
+
+function drawHistory() {
+  const all=currentHistory().points,latest=all.at(-1),seconds=Number($('history-window').value);
+  historyView=Number.isFinite(seconds) && latest?all.filter(point=>point.at>=latest.at-seconds*1000):all;
+  const wrap=$('history-scroll'),canvas=$('stable-history');
+  const follow=wrap.scrollWidth-wrap.clientWidth-wrap.scrollLeft<24;
+  const duration=historyView.length>1?(historyView.at(-1).at-historyView[0].at)/1000:0;
+  canvas.style.width=`${Math.max(280,wrap.getBoundingClientRect().width-2,Math.min(5000,duration*2))}px`;
+  const {ctx,w,h}=canvasContext(canvas);drawStableHistory(ctx,w,h,historyView);
+  if(follow)wrap.scrollLeft=wrap.scrollWidth;
+  $('export-history').disabled=!all.length;
+  $('history-summary').textContent=latest?`${source===Source.Demo?'Demo · ':''}${all.length.toLocaleString()} stable readings · latest ${rateText(latest.rate)} s/day at ${new Date(latest.at).toLocaleTimeString()}`:'Waiting for stable readings';
+  $('history-detail').textContent=source===Source.Demo?'Demo history is temporary and is never saved with your watch measurements.':historySaved?'Only stable readings are recorded, up to once every 5 seconds. Scroll horizontally for older readings; point at a reading for details. Gaps show lost lock or changed settings. Saved in this browser.':'History is held in memory because browser storage is unavailable. Export CSV to keep it.';
+  canvas.setAttribute('aria-label',`${historyView.length} stable readings. Rate in seconds per day and beat error in milliseconds. ${latest?`Latest rate ${rateText(latest.rate)}, beat error ${latest.beatError??'unavailable'}.`:''}`);
+}
+
+function inspectHistory(event) {
+  if(!historyView.length || !Number.isFinite(event.clientX))return;
+  const rect=$('stable-history').getBoundingClientRect(),first=historyView[0].at,last=historyView.at(-1).at;
+  const time=first+Math.max(0,Math.min(1,(event.clientX-rect.left-65)/(rect.width-85)))*(last-first);
+  const point=historyView.reduce((best,value)=>Math.abs(value.at-time)<Math.abs(best.at-time)?value:best);
+  $('history-detail').textContent=`${new Date(point.at).toLocaleString()} · ${rateText(point.rate)} s/day · beat error ${Number.isFinite(point.beatError)?point.beatError.toFixed(2)+' ms':'unavailable'} · ${point.sourceName} · ${point.position.replaceAll('-',' ')}`;
+}
+
+function exportHistory() {
+  const rows=currentHistory().points.map(point=>[new Date(point.at).toISOString(),point.rate,point.beatError??'',point.segment,point.sourceName,point.position].map(value=>`"${String(value).replaceAll('"','""')}"`).join(','));
+  download(new Blob([['date,rate_seconds_per_day,beat_error_ms,segment,source,position',...rows].join('\n')],{type:'text/csv'}),'watch-stable-history.csv');
 }
 
 function drawPulses() {
@@ -492,6 +588,8 @@ function colorAt(level) {
   const s=(t-.45)/.55;return [Math.round(37+202*s),Math.round(87+131*s),Math.round(70+75*s)];
 }
 
+const SPECTRUM_COLORS=Array.from({length:256},(_,value)=>colorAt(value/255));
+
 function drawSpectrogram() {
   const {ctx,w,h}=canvasContext($('spectrogram'));
   ctx.clearRect(0,0,w,h);
@@ -501,6 +599,11 @@ function drawSpectrogram() {
   const recent=spectrumColumns.filter(column=>column.time>=start);
   const pixels=ctx.createImageData(w,h);
   const low=Number($('low-filter').value),high=Number($('high-filter').value);
+  const unfiltered=$('filter-mode').value===FilterMode.Tg;
+  const rows=Array.from({length:h},(_,y)=>{
+    const hz=(1-y/h)*spectrumMaxHz;
+    return {bin:Math.min(recent[0].values.length-1,Math.floor(hz/spectrumMaxHz*recent[0].values.length)),gain:unfiltered || hz>=low && hz<=high?1:0.2};
+  });
   let cursor=0;
   for(let x=0;x<w;x++) {
     const from=start+x/w*duration,to=start+(x+1)/w*duration;
@@ -511,9 +614,8 @@ function drawSpectrogram() {
     let next=cursor+1;
     while(next<recent.length && recent[next].time<=to){for(let bin=0;bin<values.length;bin++)values[bin]=Math.max(values[bin],recent[next].values[bin]);next++;}
     for(let y=0;y<h;y++) {
-      const hz=(1-y/h)*spectrumMaxHz,bin=Math.min(values.length-1,Math.floor(hz/spectrumMaxHz*values.length));
-      const strength=values[bin]/255*($('filter-mode').value===FilterMode.Tg || hz>=low && hz<=high?1:.2);
-      const rgb=colorAt(strength),at=(y*w+x)*4;
+      const row=rows[y];
+      const rgb=SPECTRUM_COLORS[Math.round(values[row.bin]*row.gain)],at=(y*w+x)*4;
       pixels.data[at]=rgb[0];pixels.data[at+1]=rgb[1];pixels.data[at+2]=rgb[2];pixels.data[at+3]=255;
     }
   }
@@ -590,10 +692,16 @@ $('spectrum-window').addEventListener('change',()=>{drawSpectrogram();drawTrace(
 for(const id of ['trace-window','trace-span']) $(id).addEventListener('change',drawTrace);
 for(const id of ['bph','calibration','lift-angle']) $(id).addEventListener('change',()=>{lastMetrics.clear();generation++;measurement=null;$('pulses-verified').checked=false;void analyse();renderMetrics();});
 for(const id of ['device','sample-rate']) $(id).addEventListener('change',()=>{if(running)void connectMic();});
-for(const id of ['lift-angle','angle-verified','pulses-verified','tick-unlock','tick-drop','tock-unlock','tock-drop']) $(id).addEventListener('input',()=>{lastMetrics.delete(Metric.Amp);calcAmplitude();drawPulses();});
+for(const id of ['lift-angle','angle-verified','pulses-verified','tick-unlock','tick-drop','tock-unlock','tock-drop']) $(id).addEventListener('input',()=>{lastMetrics.delete(Metric.Amp);calcAmplitude();drawPulses();drawVintage();});
 $('amplitude-details').addEventListener('toggle',drawPulses);
+$('vintage-range').addEventListener('change',drawVintage);
+$('history-window').addEventListener('change',drawHistory);
+$('stable-history').addEventListener('pointermove',inspectHistory);
+$('stable-history').addEventListener('pointerleave',drawHistory);
+$('export-history').addEventListener('click',exportHistory);
+$('clear-history').addEventListener('click',()=>{currentHistory().clear();if(source!==Source.Demo)persistHistory();drawHistory();});
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{drawTrace();drawPulses();drawSpectrogram();},150);});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{drawTrace();drawPulses();drawSpectrogram();drawHistory();},150);});
 window.addEventListener('pagehide',()=>{void stopCapture();});
 navigator.mediaDevices?.addEventListener?.('devicechange',()=>{void listDevices();});
 function updateFilters() {
@@ -602,4 +710,5 @@ function updateFilters() {
   $('spectrum-mode').textContent=custom?'Raw spectrum · custom band highlighted':'Raw spectrum · tg default, no extra bandpass';
 }
 setInterval(refreshStaleAges,STALE_REFRESH_MS);
-updateFilters();renderLog();renderMetrics();drawTrace();void listDevices();
+requestAnimationFrame(animateDial);
+updateFilters();renderLog();renderMetrics();drawTrace();drawHistory();void listDevices();

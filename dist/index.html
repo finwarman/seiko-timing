@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#141817">
   <title>7009A · Watch bench</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=vintage-sweep-history">
 </head>
 <body>
   <header class="topbar">
@@ -55,10 +55,12 @@
           <p class="eyebrow">04 / ADJUST</p><h2>One change at a time.</h2>
           <div id="adjustment" class="adjustment">Measure a stable baseline first.</div>
           <label class="check"><input id="identified" type="checkbox"><span>I can identify the regulator pointer and its +/− scale.</span></label>
-          <p>The regulator adjusts rate. The larger stud holder adjusts beat error. Leave the stud holder alone while timing is uncertain.</p>
+          <p>The regulator adjusts rate. Follow its scale pointer: + speeds up; − slows down. Left/right depends on how the movement is rotated.</p>
+          <p><strong>How much?</strong> There is no fixed seconds/day per millimetre or degree. A repeatable before/after reading and a known movement amount are needed to estimate sensitivity. A loose or temporarily held stud prevents reliable calibration.</p>
+          <p><strong>Spring block:</strong> the stud holder carries the hairspring’s outer attachment and adjusts beat error. The displayed milliseconds are an unsigned magnitude, so they cannot choose a direction. Secure the stud with its proper screw before adjusting the holder.</p>
           <p>With the back open, photograph the starting position. Under magnification, make a barely visible nudge on the regulator’s metal edge with blunt pegwood. Keep the mic and tool clear of the balance and hairspring. Take a final reading after closing the case.</p>
           <div class="aside-note">Never force a stop. If a large loss persists at the + limit, or the watch stops intermittently, it needs inspection.</div>
-          <details><summary>Show the direction rule</summary><div class="direction-diagram"><div>Two-dot end <span>←</span></div><div class="lever" aria-hidden="true">●<br>│<br>◉<br>│<br>▼</div><div>Scale pointer <span>→ +</span></div><small>Schematic: opposite ends move opposite ways. Your movement may be rotated.</small></div></details>
+          <details><summary>Show the direction rule</summary><div class="direction-diagram"><div>Two-dot end <span>←</span></div><div class="lever" aria-hidden="true">●<br>│<br>◉<br>│<br>▼</div><div>Scale pointer <span>→ +</span></div><small>Schematic only. Identify the actual scale pointer before choosing a direction; the two-dot end may look reversed.</small></div></details>
           <button id="start-comparison" type="button" class="primary wide next">Start a fresh measurement <span>→</span></button>
         </section>
       </aside>
@@ -81,6 +83,13 @@
           <div class="metric"><div class="metric-label">RATE <span>s/day</span></div><div class="metric-value" id="metric-rate">–</div><div class="metric-note" id="note-rate">Waiting for beats</div></div>
           <div class="metric"><div class="metric-label">BEAT ERROR <span>ms</span></div><div class="metric-value" id="metric-beat">–</div><div class="metric-note" id="note-beat">Needs repeatable events</div></div>
           <div class="metric"><div class="metric-label">AMPLITUDE <span>°</span></div><div class="metric-value" id="metric-amp">–</div><div class="metric-note" id="note-amp">Needs pulse check</div></div>
+        </section>
+
+        <section class="panel stable-panel" aria-labelledby="history-title">
+          <div class="section-heading"><h2 id="history-title">Stable history</h2><div class="history-actions"><button id="export-history" class="text-button" type="button" disabled>Export CSV</button><button id="clear-history" class="quiet compact" type="button">Clear history</button></div></div>
+          <div class="history-toolbar"><label>Show<select id="history-window"><option value="300">Last 5 minutes</option><option value="1800">Last 30 minutes</option><option value="7200">Last 2 hours</option><option value="all" selected>All history</option></select></label><span id="history-summary" class="small muted">Waiting for stable readings</span></div>
+          <div id="history-scroll" class="history-scroll" tabindex="0" role="region" aria-label="Scrollable stable rate and beat-error history"><canvas id="stable-history" role="img" aria-label="Stable rate and beat-error history"></canvas></div>
+          <p id="history-detail" class="small muted">Only stable readings are recorded, up to once every 5 seconds. Gaps show lost lock or changed settings. History stays in this browser.</p>
         </section>
 
         <section class="panel signal-panel">
@@ -107,6 +116,14 @@
 
         <section class="panel log-panel"><div class="section-heading"><h2>Measurement log</h2><button id="export-log" class="text-button" type="button" disabled>Export CSV</button></div><div id="log-empty" class="muted small">Saved baselines stay in this browser. Demo readings are labelled.</div><div class="table-scroll"><table id="log-table" hidden><thead><tr><th>Source / position</th><th>Rate</th><th>Beat error*</th><th>Amplitude*</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
       </div>
+
+      <aside class="vintage-panel" aria-labelledby="vintage-title">
+        <div class="vintage-heading"><div><p class="eyebrow">CLASSIC VIEW</p><h2 id="vintage-title">Timing dial</h2></div><span class="mono">tg</span></div>
+        <div class="vintage-face"><canvas id="vintage-meter" role="img" aria-label="Yellow timing dial with measured triangle marks on an isometric dot grid"></canvas></div>
+        <div class="vintage-settings"><label>Dial range<select id="vintage-range"><option value="50" selected>±50 s/day</option><option value="300">±300 s/day</option><option value="1200">±1200 s/day</option></select></label><span id="vintage-scale" class="mono">60 s · 20 ms</span></div>
+        <p id="vintage-status" class="small muted" aria-live="polite">Waiting for audio</p>
+        <p class="vintage-help">Triangles stay fixed as the red line sweeps upward from the bottom. Zero rate makes a vertical track; fast leans right, slow leans left. The sweep restarts when full. Marks wrap at the side edges.</p>
+      </aside>
     </div>
 
     <footer><p>Acoustic estimates from the open-source tg engine. Beat error and amplitude depend on resolving the escapement pulses. Amplitude requires a confirmed lift angle. Window spread describes repeatability, not absolute accuracy. Rate includes audio-clock error unless calibrated. Confirm results against elapsed time.</p><div><a href="credits.html">Engine source and licences</a><a href="https://service.seiko.com.au/i/seiko/documents/technicalguides/7009A.pdf" target="_blank" rel="noreferrer">Seiko 7009A sheet ↗</a><a href="https://github.com/vacaboja/tg" target="_blank" rel="noreferrer">Timing reference ↗</a><a href="https://timegrapher.app/doc/05-rate-and-detail.html" target="_blank" rel="noreferrer">Signal limits ↗</a></div></footer>
