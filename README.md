@@ -19,6 +19,8 @@ npx wrangler deploy
 
 Only `/seiko` and `/seiko/*` are routed to this Worker. Other site paths stay unchanged. Audio and saved baselines stay in the browser. No audio is uploaded.
 
+The interface uses the shared f1nb0.dev cream/dark theme. Input, signal, baseline and adjustment share one compact instruction area; filter and calibration details are collapsed. Stable history and the timing dial were imported from the newer scratch source on 25 October 2026.
+
 The initial snapshot came from the “Guide Seiko 7009A adjustment” chat on 24 October 2026. This repository is the tracked publishing source.
 
 The live worker uses the unchanged tg C timing engine compiled to WebAssembly by [MAC Bespoke Web Timegrapher](https://github.com/natemac/mac-timegrapher), revision `c0f93752332804b30064b91db557471162ca65b9`. The prior custom detector remains only as a synthetic fixture and experimental module. It does not supply the live measurements.
@@ -42,7 +44,7 @@ Source changes cancel obsolete operations. Settings invalidate their earlier res
 Validation:
 
 ```sh
-node --test capture.test.mjs spectrum.test.mjs app-state.test.mjs dist/dsp.test.mjs dist/rate.test.mjs watch-engine.test.mjs timing-strip.test.mjs
+node --test capture.test.mjs spectrum.test.mjs app-state.test.mjs dist/dsp.test.mjs dist/rate.test.mjs watch-engine.test.mjs timing-strip.test.mjs history-view.test.mjs
 ```
 
 The actual vendored WASM is checked against independent synthetic rates, beat error and pulse spacing, native 192 kHz capture, alias rejection, clock correction, clipping, noise, random transients, stopped-watch recordings and rate changes. UI checks cover automatic amplitude confirmation, baseline gates and source races. Real Scarlett/SM58 recordings were compared through unchanged tg and the selected input filters; they did not achieve a valid lock. Accuracy against a calibrated physical timegrapher remains unverified.

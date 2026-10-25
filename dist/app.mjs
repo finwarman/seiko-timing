@@ -139,7 +139,7 @@ function resetData(history=MetricHistory.Clear) {
   spectrumColumns=[];spectrumGeneration++;
   spectrumWorker.postMessage({type:'reset',generation:spectrumGeneration,sampleRate:0});
   $('spectrum-empty').hidden=false;
-  $('feedback').textContent='Collecting audio. Keep the watch and microphone still.';
+  $('feedback').textContent='Collecting audio · keep the setup still';
   renderMetrics();drawTrace();drawPulses();
 }
 
@@ -341,29 +341,30 @@ function renderMetrics() {
   $('note-beat').textContent=hasDetail && Number.isFinite(value.beatError)?'Provisional acoustic estimate':'Needs clear pulse timing';
   $('quality').textContent=waveform?'Average rate found; pulse detail unclear':unsteady?'Repeating rhythm; rate not steady':unlocked?'Clicks detected; timing not locked':value?.quality===Quality.Stable?'Repeatable signal':value?.quality===Quality.Usable?'Rhythm detected':value?.quality===Quality.Noisy?(clipped?'Input clipping':'Timing not locked'):value?.quality===Quality.Weak?'Searching for repeating clicks':'Waiting for audio';
   $('quality-led').className=`led ${timing?.stable?'active':clipped?'bad':hasCandidates || waveform || unsteady?'warning':''}`;
-  $('feedback').textContent=waveform || unsteady?value.average.reason:unlocked?`Clicks detected. Timing scatter is ${value.jitterMs.toFixed(2)} ms. The pulse detector has not locked. Waveform averaging checks rate separately; beat error needs clearer pulse timing.`:value?.reason || (source===Source.None?'Connect a microphone, open a recording, or try the generated demo.':'Collecting audio. Keep the watch and microphone still.');
+  $('feedback').textContent=waveform || unsteady?value.average.reason:unlocked?`Clicks detected. Timing scatter is ${value.jitterMs.toFixed(2)} ms. The pulse detector has not locked. Waveform averaging checks rate separately; beat error needs clearer pulse timing.`:value?.reason || (source===Source.None?'Choose an input to begin':'Collecting audio · keep the setup still');
   $('level').textContent=value?.rms>0?`${(20*Math.log10(value.rms)).toFixed(1)} dBFS`:'– dBFS';
   $('snr').textContent=value?.snrDb?`Click contrast ${value.snrDb.toFixed(0)} dB`:'Click contrast –';
   $('event-count').textContent=`${value?.events?.length||0} ${hasRate?'matched':'candidate'} events${value?.coverage?` · ${(100*value.coverage).toFixed(0)}% grid coverage`:''}${value?.events?.length?` · timing scatter ${value.jitterMs.toFixed(2)} ms`:''}`;
   if(tg) {
-    $('quality').textContent=clipped?'tg · Input clipping':timing?.stable?'tg · Repeatable timing':hasRate?'tg · Timing lock':value.duration<2?'tg · Collecting audio':'tg · No timing lock';
-    $('note-rate').textContent=hasRate?`tg · ${value.rateSpread===null?'Checking separate windows':`window spread ${value.rateSpread.toFixed(1)} s/day`}`:'Waiting for tg waveform lock';
-    $('note-beat').textContent=hasDetail && Number.isFinite(value.beatError)?'tg acoustic estimate':'Needs a tg waveform lock';
+    $('quality').textContent=clipped?'Input clipping':timing?.stable?'Repeatable timing':hasRate?'Timing lock':value.duration<2?'Collecting audio':'No timing lock';
+    $('note-rate').textContent=hasRate?`${value.rateSpread===null?'Checking separate windows':`window spread ${value.rateSpread.toFixed(1)} s/day`}`:'Waiting for timing lock';
+    $('note-beat').textContent=hasDetail && Number.isFinite(value.beatError)?'Acoustic estimate':'Needs timing lock';
     $('snr').textContent=`tg windows converged: ${Math.round(value.engineQuality*4)}/4`;
     $('event-count').textContent=`${value.events.length} tg beat positions · ${source===Source.Mic?'recent beats':'recording history'}`;
     $('capture-rate').textContent=`Capture ${sourceRate?formatHz(sourceRate):'unknown'} / audio ${formatHz(sampleRate)}${value.engineRate?` / tg ${formatHz(value.engineRate)}`:''}`;
   }
+  if (tg && timing?.stable && !clipped) $('feedback').textContent='Check with a fresh take before adjusting.';
   const ready=!!timing?.stable && value.duration>=MIN_BASELINE_SECONDS;
   $('save-baseline').disabled=!ready;
-  $('baseline-message').textContent=ready?'A baseline can be saved. Repeat a fresh measurement to check consistency.':'Two repeatable windows and at least 32 seconds are needed to save a baseline.';
+  $('baseline-message').textContent=ready?'Ready to save · repeat a fresh take to confirm':'Saving needs 32 seconds and two repeatable windows.';
   $('download-audio').disabled=!sampleCount;
   calcAmplitude();
   for(const metric of [Metric.Bph,Metric.Rate,Metric.Beat]) retainMetric(metric);
-  if(!ready) $('adjustment').textContent='Measure a stable baseline first. Keep the setup still for 60 seconds.';
+  if(!ready) $('adjustment').textContent='Save a stable baseline first. Measure for 60 seconds.';
   else if(Math.abs(timing.rate)>LARGE_RATE) $('adjustment').textContent=`${rateText(timing.rate)} s/day is a large error. Check power and intermittent stopping before fine regulation. If it persists at a regulator limit, arrange inspection.`;
   else if(!$('identified').checked) $('adjustment').textContent='Confirm the regulator pointer and its scale before making a change.';
-  else if(Math.abs(timing.rate)<5) $('adjustment').textContent='This estimate is close to zero. Confirm it over a full day and in other positions before chasing a smaller change.';
-  else $('adjustment').textContent=`${source===Source.Demo?'Demo guidance: ':''}${timing.rate<0?'Slow: the scale pointer needs to move toward + (faster).':'Fast: the scale pointer needs to move toward − (slower).'} Follow the pointer on its scale, not left/right at the two-dot end. Stop touching the watch, then take a fresh reading.`;
+  else if(Math.abs(timing.rate)<5) $('adjustment').textContent='Near zero. Check over a full day and in other positions before adjusting.';
+  else $('adjustment').textContent=`${source===Source.Demo?'Demo guidance: ':''}${timing.rate<0?'Slow: nudge the scale pointer toward +.':'Fast: nudge the scale pointer toward −.'} Follow the scale pointer; the two-dot end moves opposite. Take a fresh reading after each change.`;
 }
 
 function calcAmplitude() {
@@ -545,7 +546,7 @@ function drawHistory() {
   if(follow)wrap.scrollLeft=wrap.scrollWidth;
   $('export-history').disabled=!all.length;
   $('history-summary').textContent=latest?`${source===Source.Demo?'Demo · ':''}${all.length.toLocaleString()} stable readings · latest ${rateText(latest.rate)} s/day at ${new Date(latest.at).toLocaleTimeString()}`:'Waiting for stable readings';
-  $('history-detail').textContent=source===Source.Demo?'Demo history is temporary and is never saved with your watch measurements.':historySaved?'Only stable readings are recorded, up to once every 5 seconds. Scroll horizontally for older readings; point at a reading for details. Gaps show lost lock or changed settings. Saved in this browser.':'History is held in memory because browser storage is unavailable. Export CSV to keep it.';
+  $('history-detail').textContent=source===Source.Demo?'Demo history is temporary and stays separate from watch readings.':historySaved?'Stable readings every 5 seconds. Gaps mark lost lock or changed settings. Scroll for older readings; hover for details.':'Browser storage unavailable · export CSV to keep this history.';
   canvas.setAttribute('aria-label',`${historyView.length} stable readings. Rate in seconds per day and beat error in milliseconds. ${latest?`Latest rate ${rateText(latest.rate)}, beat error ${latest.beatError??'unavailable'}.`:''}`);
 }
 

@@ -1,21 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#141817">
   <title>7009A · Watch bench</title>
-  <link rel="stylesheet" href="style.css?v=vintage-sweep-history">
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="style.css?v=site-layout">
 </head>
 <body>
-  <header class="topbar">
-    <a href="#" class="brand" aria-label="Watch bench home"><span class="brand-mark" aria-hidden="true">◷</span><span>WATCH BENCH <small>SEIKO 7009A</small></span></a>
-    <div class="top-status"><span id="capture-led" class="led"></span><span id="capture-label">Microphone off</span><span class="local-label">LOCAL AUDIO</span></div>
-  </header>
 
   <main>
-    <div class="page-title"><div><p class="eyebrow">GUIDED WATCH TIMING</p><h1>Find the beat.</h1><p class="subtitle">Get a clear signal. Measure a baseline. Make one small adjustment.</p></div><div id="source-tag" class="source-tag">NO SOURCE</div></div>
+    <header class="site-header"><nav class="site-nav"><a href="/">f1nb0.dev</a><span>/ seiko</span></nav><div class="top-status"><span id="capture-led" class="led"></span><span id="capture-label">microphone off</span></div></header>
+    <div class="page-title"><div><h1>seiko 7009a</h1><p class="subtitle">watch timing · audio stays in your browser</p></div><div id="source-tag" class="source-tag">no source</div></div>
 
     <nav class="steps" aria-label="Timing wizard">
       <button type="button" data-step="0" aria-current="step"><span>1</span>Set up</button>
@@ -24,57 +21,52 @@
       <button type="button" data-step="3"><span>4</span>Adjust</button>
     </nav>
 
-    <div id="demo-banner" class="notice demo-notice" hidden>DEMO SIGNAL <span>Generated audio. These are not readings from your watch.</span></div>
+    <div id="demo-banner" class="notice demo-notice" hidden>demo <span>Generated audio, not a watch measurement</span></div>
     <div id="error" class="notice error" role="alert" hidden></div>
 
     <div class="workspace">
       <aside class="guide-panel">
         <section data-guide="0">
-          <p class="eyebrow">01 / SET UP</p><h2>Start at the microphone.</h2>
-          <p>A wired iPhone headset mic can work. Place its opening very close to the case edge or crown. Light contact can help if it causes no rubbing. Support both so they stay still.</p>
-          <p>Build up power through normal wear or gentle rocking. Move the watch away from laptop speakers.</p>
-          <div class="aside-note">The case can stay open while adjusting. A hat can screen room noise. Keep fabric clear of the movement and mic. Audio stays on this device.</div>
-          <button type="button" class="primary wide next" data-next="1">Check the signal <span>→</span></button>
+          <h2>input</h2>
+          <p>Place a wired mic close to the case or crown. Keep the watch and cable still, away from speakers.</p>
+          <details><summary>pickup tips</summary><p>Build power through normal wear or gentle rocking. Light mic contact can help, but avoid rubbing. Keep fabric and tools clear of the movement.</p></details>
         </section>
         <section data-guide="1" hidden>
-          <p class="eyebrow">02 / FIND SIGNAL</p><h2>Look for repeating clicks.</h2>
-          <p>The 7009A makes six beats per second. Look for evenly spaced vertical marks in the spectrogram.</p>
-          <ol><li>Keep fingers, the cable and the desk still.</li><li>Try another contact point if clicks are faint.</li><li>Keep noise reduction and auto gain off where possible.</li></ol>
-          <div class="aside-note">The filter selects the click’s audio frequencies. It does not filter at the six-beats-per-second repetition rate.</div>
-          <button type="button" class="primary wide next" data-next="2">Measure a baseline <span>→</span></button>
+          <h2>signal</h2>
+          <p>Look for repeating clicks. If pickup is weak, try another contact point. Keep noise reduction and auto gain off.</p>
+          <button type="button" class="secondary next" data-next="2">measure →</button>
         </section>
         <section data-guide="2" hidden>
-          <p class="eyebrow">03 / MEASURE</p><h2>Let the reading settle.</h2>
-          <p>Measure for 60 seconds without moving the watch. Repeat in the same position before adjusting.</p>
-          <label>Watch position<select id="position"><option value="dial-up">Dial up</option><option value="dial-down">Dial down</option><option value="crown-up">Crown up</option><option value="crown-down">Crown down</option></select></label>
-          <div id="baseline-message" class="aside-note">A usable signal and at least 32 seconds are needed to save a baseline.</div>
-          <button id="save-baseline" type="button" class="secondary wide" disabled>Save baseline</button>
-          <button type="button" class="primary wide next" data-next="3">Review adjustment <span>→</span></button>
+          <h2>baseline</h2>
+          <p>Leave the watch still for 60 seconds. Repeat in the same position before adjusting.</p>
+          <div class="baseline-controls"><label>Position<select id="position"><option value="dial-up">Dial up</option><option value="dial-down">Dial down</option><option value="crown-up">Crown up</option><option value="crown-down">Crown down</option></select></label><button id="save-baseline" type="button" class="primary" disabled>save baseline</button><button type="button" class="secondary next" data-next="3">adjust →</button></div>
+          <p id="baseline-message" class="small muted">Saving needs 32 seconds and two repeatable windows.</p>
         </section>
         <section data-guide="3" hidden>
-          <p class="eyebrow">04 / ADJUST</p><h2>One change at a time.</h2>
-          <div id="adjustment" class="adjustment">Measure a stable baseline first.</div>
-          <label class="check"><input id="identified" type="checkbox"><span>I can identify the regulator pointer and its +/− scale.</span></label>
-          <p>The regulator adjusts rate. Follow its scale pointer: + speeds up; − slows down. Left/right depends on how the movement is rotated.</p>
-          <p><strong>How much?</strong> There is no fixed seconds/day per millimetre or degree. A repeatable before/after reading and a known movement amount are needed to estimate sensitivity. A loose or temporarily held stud prevents reliable calibration.</p>
-          <p><strong>Spring block:</strong> the stud holder carries the hairspring’s outer attachment and adjusts beat error. The displayed milliseconds are an unsigned magnitude, so they cannot choose a direction. Secure the stud with its proper screw before adjusting the holder.</p>
-          <p>With the back open, photograph the starting position. Under magnification, make a barely visible nudge on the regulator’s metal edge with blunt pegwood. Keep the mic and tool clear of the balance and hairspring. Take a final reading after closing the case.</p>
-          <div class="aside-note">Never force a stop. If a large loss persists at the + limit, or the watch stops intermittently, it needs inspection.</div>
-          <details><summary>Show the direction rule</summary><div class="direction-diagram"><div>Two-dot end <span>←</span></div><div class="lever" aria-hidden="true">●<br>│<br>◉<br>│<br>▼</div><div>Scale pointer <span>→ +</span></div><small>Schematic only. Identify the actual scale pointer before choosing a direction; the two-dot end may look reversed.</small></div></details>
-          <button id="start-comparison" type="button" class="primary wide next">Start a fresh measurement <span>→</span></button>
+          <h2>adjustment</h2>
+          <div id="adjustment" class="adjustment">Save a stable baseline first.</div>
+          <label class="check"><input id="identified" type="checkbox"><span>I can identify the regulator pointer and its +/− scale</span></label>
+          <details><summary>regulator and stud holder</summary>
+            <p>Follow the regulator’s scale pointer: + speeds up, − slows down. Left and right depend on the movement’s rotation. The two-dot end moves opposite the pointer.</p>
+            <p>There is no fixed seconds/day per nudge. Compare repeatable readings before and after each change.</p>
+            <p>The stud holder carries the hairspring’s outer attachment and adjusts beat error. Secure it with the correct screw first. A loose or temporarily held stud prevents reliable calibration. Beat error is unsigned, so the reading cannot choose an adjustment direction.</p>
+            <p>Photograph the starting position. Under magnification, use blunt pegwood on the regulator’s metal edge for a barely visible nudge. Keep the tool clear of the balance and hairspring. Never force a stop. Recheck after closing the case.</p>
+            <p>Persistent large loss at the + limit, or intermittent stopping, needs inspection.</p>
+          </details>
+          <button id="start-comparison" type="button" class="primary next">measure again →</button>
         </section>
       </aside>
 
       <div class="instrument">
         <section id="source-panel" class="panel">
-          <div class="section-heading"><h2>Audio source</h2><span id="source-state" class="muted">Choose an input</span></div>
-          <p class="small muted" style="margin-bottom:14px">Connect the headset, allow microphone access, then choose it from the input list. Avoid Bluetooth.</p>
+          <div class="section-heading"><h2>input</h2><span id="source-state" class="muted">Choose an input</span></div>
+          <p class="small muted" style="margin-bottom:14px">Choose a wired mic, or open a recording.</p>
           <div class="source-actions"><button id="connect" class="primary" type="button">Connect microphone</button><label class="file-button secondary">Open recording<input id="audio-file" type="file" accept="audio/*,.wav,.flac,.m4a,.mp3,.ogg"></label><button id="demo" class="quiet" type="button">Try demo</button></div>
           <div class="input-grid">
             <label>Microphone<select id="device"><option value="">System default</option></select></label>
-            <label>Channel<select id="input-channel"><option value="input-1">Input 1 · SM58</option><option value="input-2">Input 2</option><option value="mix">Mix channels</option></select></label><label>Capture request<select id="sample-rate"><option value="max">Highest available</option><option value="192000">192 kHz</option><option value="96000">96 kHz</option><option value="48000" selected>48 kHz</option></select></label>
+            <label>Channel<select id="input-channel"><option value="input-1">Input 1</option><option value="input-2">Input 2</option><option value="mix">Mix channels</option></select></label><label>Sample rate<select id="sample-rate"><option value="max">Highest available</option><option value="192000">192 kHz</option><option value="96000">96 kHz</option><option value="48000" selected>48 kHz</option></select></label>
           </div>
-          <details class="advanced"><summary>Movement and capture details</summary><div class="input-grid"><label>Expected BPH<select id="bph"><option>18000</option><option>19800</option><option selected>21600</option><option>25200</option><option>28800</option><option>36000</option></select></label><label>Audio clock correction (ppm)<input id="calibration" type="number" min="-5000" max="5000" step="1" value="0"></label></div><p class="small muted">Positive correction means the actual sample clock is faster than its stated rate. Leave at zero unless calibrated independently.</p><p id="capture-details" class="small mono">No capture connected.</p></details>
+          <details class="advanced"><summary>calibration and capture details</summary><div class="input-grid"><label>Expected BPH<select id="bph"><option>18000</option><option>19800</option><option selected>21600</option><option>25200</option><option>28800</option><option>36000</option></select></label><label>Audio clock correction (ppm)<input id="calibration" type="number" min="-5000" max="5000" step="1" value="0"></label></div><p class="small muted">Positive correction means the actual sample clock is faster than its stated rate. Leave at zero unless calibrated independently.</p><p id="capture-details" class="small mono">No capture connected.</p></details>
           <div id="demo-options" class="demo-options" hidden><label>Demo recording<select id="demo-preset"><option value="slow">Reported loss · about −15 min/day</option><option value="stable">Stable watch · zero rate</option><option value="noise">Poor pickup · no usable beat</option></select></label><span class="small muted">60 seconds, synthesized at 96 kHz</span></div>
         </section>
 
@@ -85,49 +77,49 @@
           <div class="metric"><div class="metric-label">AMPLITUDE <span>°</span></div><div class="metric-value" id="metric-amp">–</div><div class="metric-note" id="note-amp">Needs pulse check</div></div>
         </section>
 
-        <section class="panel stable-panel" aria-labelledby="history-title">
-          <div class="section-heading"><h2 id="history-title">Stable history</h2><div class="history-actions"><button id="export-history" class="text-button" type="button" disabled>Export CSV</button><button id="clear-history" class="quiet compact" type="button">Clear history</button></div></div>
-          <div class="history-toolbar"><label>Show<select id="history-window"><option value="300">Last 5 minutes</option><option value="1800">Last 30 minutes</option><option value="7200">Last 2 hours</option><option value="all" selected>All history</option></select></label><span id="history-summary" class="small muted">Waiting for stable readings</span></div>
-          <div id="history-scroll" class="history-scroll" tabindex="0" role="region" aria-label="Scrollable stable rate and beat-error history"><canvas id="stable-history" role="img" aria-label="Stable rate and beat-error history"></canvas></div>
-          <p id="history-detail" class="small muted">Only stable readings are recorded, up to once every 5 seconds. Gaps show lost lock or changed settings. History stays in this browser.</p>
-        </section>
-
         <section class="panel signal-panel">
-          <div class="section-heading"><h2>Signal monitor</h2><div class="capture-controls"><span id="elapsed" class="mono">00:00</span><button id="change-source" class="quiet compact" type="button">Input</button><button id="stop" class="quiet compact" type="button" disabled>Stop</button><button id="clear" class="quiet compact" type="button">Clear</button></div></div>
+          <div class="section-heading"><h2>signal</h2><div class="capture-controls"><span id="elapsed" class="mono">00:00</span><button id="change-source" class="quiet compact" type="button">Input</button><button id="stop" class="quiet compact" type="button" disabled>Stop</button><button id="clear" class="quiet compact" type="button">Clear</button></div></div>
           <div class="quality-row"><div><span id="quality-led" class="led"></span><strong id="quality">Waiting for audio</strong></div><span id="capture-rate" class="mono muted">Capture – / processing –</span></div>
-          <p class="small muted">Engine: tg · autocorrelation and averaged escapement waveforms.</p><p id="feedback" class="feedback" aria-live="polite">Connect a microphone, open a recording, or try the generated demo.</p>
-          <div class="input-grid"><label>Timing filter<select id="filter-mode"><option value="tg-default">tg default</option><option value="custom-bandpass">Custom bandpass + tg</option></select></label><p id="channel-levels" class="small mono muted">Channel levels appear during capture.</p></div>
+          <p class="small muted">Timing engine: tg</p><p id="feedback" class="feedback" aria-live="polite">Choose an input to begin</p>
+          <details class="filter-details"><summary>filters and input levels</summary>          <div class="input-grid"><label>Timing filter<select id="filter-mode"><option value="tg-default">tg default</option><option value="custom-bandpass">Custom bandpass + tg</option></select></label><p id="channel-levels" class="small mono muted">Channel levels appear during capture.</p></div>
           <div class="filter-bar"><label>High-pass <span id="low-label" class="mono">1.2 kHz</span><input id="low-filter" type="range" min="200" max="6000" value="1200" step="100"></label><label>Low-pass <span id="high-label" class="mono">10 kHz</span><input id="high-filter" type="range" min="4000" max="20000" value="10000" step="500"></label><div class="signal-reading"><span id="level" class="mono">– dBFS</span><span id="snr" class="small muted">Click contrast –</span></div></div>
-          <p class="small muted">tg default: 3 kHz high-pass, rectification, then a 3 kHz envelope low-pass. Custom mode adds the sliders’ bandpass first. Timing uses anti-aliased audio at up to 48 kHz.</p><figure><figcaption><span>FREQUENCY · kHz</span><label class="time-window">Time window<select id="spectrum-window"><option value="2" selected>2 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select></label></figcaption><div class="canvas-wrap spectrum-wrap"><canvas id="spectrogram" role="img" aria-label="Audio spectrogram computed continuously from captured samples, with frequency vertically and time horizontally"></canvas><div id="spectrum-empty" class="chart-empty">The spectrogram appears when audio is available.</div></div><div id="time-axis" class="time-axis mono"><span>−2 s</span><span>−1 s</span><span>Latest</span></div><div class="spectrum-axis mono"><span id="spectrum-band">0–16 kHz</span><span id="spectrogram-source">No audio</span></div><div id="spectrum-mode" class="small muted" style="margin-top:6px">Raw spectrum · tg default, no extra bandpass</div></figure>
-          <figure class="trace-figure"><figcaption><span>TIMING STRIP · TIME ↓</span><div class="trace-controls"><label>History <select id="trace-window"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="120">120 s</option></select></label><label>Phase width <select id="trace-span"><option value="20" selected>20 ms</option><option value="50">50 ms</option><option value="100">100 ms</option></select></label></div></figcaption><canvas id="trace" role="img" aria-label="Scrolling timing strip: time runs down, early beats are left, late beats are right"></canvas><div id="trace-scale" class="small muted">60 s down · 20 ms across</div><p class="small muted">A vertical line means steady rate near zero. A slope shows gain or loss; two tracks can show beat error. Marks wrap at the edges. Live history builds after timing lock.</p></figure>
+          <p class="small muted">tg default: 3 kHz high-pass, rectification, then a 3 kHz envelope low-pass. Custom mode adds the sliders’ bandpass first. Timing uses anti-aliased audio at up to 48 kHz.</p></details><figure><figcaption><span>FREQUENCY · kHz</span><label class="time-window">Time window<select id="spectrum-window"><option value="2" selected>2 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select></label></figcaption><div class="canvas-wrap spectrum-wrap"><canvas id="spectrogram" role="img" aria-label="Audio spectrogram computed continuously from captured samples, with frequency vertically and time horizontally"></canvas><div id="spectrum-empty" class="chart-empty">The spectrogram appears when audio is available.</div></div><div id="time-axis" class="time-axis mono"><span>−2 s</span><span>−1 s</span><span>Latest</span></div><div class="spectrum-axis mono"><span id="spectrum-band">0–16 kHz</span><span id="spectrogram-source">No audio</span></div><div id="spectrum-mode" class="small muted" style="margin-top:6px">Raw spectrum · tg default, no extra bandpass</div></figure>
+          <figure class="trace-figure"><figcaption><span>TIMING STRIP · TIME ↓</span><div class="trace-controls"><label>History <select id="trace-window"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="120">120 s</option></select></label><label>Phase width <select id="trace-span"><option value="20" selected>20 ms</option><option value="50">50 ms</option><option value="100">100 ms</option></select></label></div></figcaption><canvas id="trace" role="img" aria-label="Scrolling timing strip: time runs down, early beats are left, late beats are right"></canvas><div id="trace-scale" class="small muted">60 s down · 20 ms across</div><p class="small muted">Vertical is near zero rate. Gain slopes left; loss slopes right. Marks wrap at the edges.</p></figure>
           <div class="signal-footer"><span id="event-count">0 detected events</span><button id="download-audio" class="text-button" type="button" disabled>Save captured WAV</button></div>
         </section>
 
         <section class="panel detail-panel">
-          <details id="amplitude-details"><summary><span>Check amplitude from the beat pulses</span><span class="small muted">Optional · requires clear audio</span></summary>
-            <div class="amplitude-content"><p>tg detects lift pulses automatically when the waveform is clear. Confirm this movement’s lift angle to display its amplitude estimate. Manual pulse markers below provide an optional check. A wrong pulse pair gives a wrong amplitude.</p>
-              <div class="input-grid"><label>Lift angle (°)<input id="lift-angle" type="number" min="30" max="75" step="0.5" value="53"></label><label class="check"><input id="angle-verified" type="checkbox"><span>I verified the lift angle for this movement. The starting value is unconfirmed.</span></label></div>
+          <details id="amplitude-details"><summary><span>amplitude</span><span class="small muted">optional</span></summary>
+            <div class="amplitude-content"><p>Confirm the lift angle to show tg’s amplitude estimate. Manual pulse markers are optional; the wrong pair gives the wrong result.</p>
+              <div class="input-grid"><label>Lift angle (°)<input id="lift-angle" type="number" min="30" max="75" step="0.5" value="53"></label><label class="check"><input id="angle-verified" type="checkbox"><span>I verified the lift angle. The starting 53° is unconfirmed.</span></label></div>
               <div class="pulse-grid"><div><h3>Tick average</h3><canvas id="tick-pulse" role="img" aria-label="Averaged tick waveform with unlock and drop markers"></canvas><div class="input-grid"><label>Unlock (ms)<input id="tick-unlock" type="number" min="-25" max="8" step="0.1" value="-10"></label><label>Drop (ms)<input id="tick-drop" type="number" min="-25" max="12" step="0.1" value="0"></label></div></div><div><h3>Tock average</h3><canvas id="tock-pulse" role="img" aria-label="Averaged tock waveform with unlock and drop markers"></canvas><div class="input-grid"><label>Unlock (ms)<input id="tock-unlock" type="number" min="-25" max="8" step="0.1" value="-10"></label><label>Drop (ms)<input id="tock-drop" type="number" min="-25" max="12" step="0.1" value="0"></label></div></div></div>
-              <p class="small muted">Markers use milliseconds relative to the detected click. Tick and tock labels are arbitrary. Compare the pulse pattern on both.</p>
-              <label class="check"><input id="pulses-verified" type="checkbox"><span>Use my manually identified unlocking and drop pulses on both waveforms.</span></label><p id="amplitude-feedback" class="aside-note">Confirm the lift angle for a tg estimate. Manual amplitude also needs your pulse confirmation.</p>
+              <p class="small muted">Markers are milliseconds from the click. Compare both waveforms; tick and tock labels are arbitrary.</p>
+              <label class="check"><input id="pulses-verified" type="checkbox"><span>Use my manual pulse markers</span></label><p id="amplitude-feedback" class="aside-note">Confirm the lift angle for a tg estimate. Manual amplitude also needs your pulse confirmation.</p>
             </div>
           </details>
         </section>
 
-        <section class="panel log-panel"><div class="section-heading"><h2>Measurement log</h2><button id="export-log" class="text-button" type="button" disabled>Export CSV</button></div><div id="log-empty" class="muted small">Saved baselines stay in this browser. Demo readings are labelled.</div><div class="table-scroll"><table id="log-table" hidden><thead><tr><th>Source / position</th><th>Rate</th><th>Beat error*</th><th>Amplitude*</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
+        <section class="panel stable-panel" aria-labelledby="history-title">
+          <div class="section-heading"><h2 id="history-title">stable history</h2><div class="history-actions"><button id="export-history" class="text-button" type="button" disabled>Export CSV</button><button id="clear-history" class="quiet compact" type="button">Clear history</button></div></div>
+          <div class="history-toolbar"><label>Show<select id="history-window"><option value="300">Last 5 minutes</option><option value="1800">Last 30 minutes</option><option value="7200">Last 2 hours</option><option value="all" selected>All history</option></select></label><span id="history-summary" class="small muted">Waiting for stable readings</span></div>
+          <div id="history-scroll" class="history-scroll" tabindex="0" role="region" aria-label="Scrollable stable rate and beat-error history"><canvas id="stable-history" role="img" aria-label="Stable rate and beat-error history"></canvas></div>
+          <p id="history-detail" class="small muted">Stable readings every 5 seconds. Gaps mark lost lock or changed settings. Saved in this browser.</p>
+        </section>
+
+        <section class="panel log-panel"><div class="section-heading"><h2>saved baselines</h2><button id="export-log" class="text-button" type="button" disabled>Export CSV</button></div><div id="log-empty" class="muted small">Baselines stay in this browser. Demos are labelled.</div><div class="table-scroll"><table id="log-table" hidden><thead><tr><th>Source / position</th><th>Rate</th><th>Beat error*</th><th>Amplitude*</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
       </div>
 
       <aside class="vintage-panel" aria-labelledby="vintage-title">
-        <div class="vintage-heading"><div><p class="eyebrow">CLASSIC VIEW</p><h2 id="vintage-title">Timing dial</h2></div><span class="mono">tg</span></div>
+        <div class="vintage-heading"><div><h2 id="vintage-title">timing dial</h2></div><span class="mono">tg</span></div>
         <div class="vintage-face"><canvas id="vintage-meter" role="img" aria-label="Yellow timing dial with measured triangle marks on an isometric dot grid"></canvas></div>
         <div class="vintage-settings"><label>Dial range<select id="vintage-range"><option value="50" selected>±50 s/day</option><option value="300">±300 s/day</option><option value="1200">±1200 s/day</option></select></label><span id="vintage-scale" class="mono">60 s · 20 ms</span></div>
         <p id="vintage-status" class="small muted" aria-live="polite">Waiting for audio</p>
-        <p class="vintage-help">Triangles stay fixed as the red line sweeps upward from the bottom. Zero rate makes a vertical track; fast leans right, slow leans left. The sweep restarts when full. Marks wrap at the side edges.</p>
+        <p class="vintage-help">Fast leans right; slow leans left. The red line sweeps upward, then starts a new page.</p>
       </aside>
     </div>
 
-    <footer><p>Acoustic estimates from the open-source tg engine. Beat error and amplitude depend on resolving the escapement pulses. Amplitude requires a confirmed lift angle. Window spread describes repeatability, not absolute accuracy. Rate includes audio-clock error unless calibrated. Confirm results against elapsed time.</p><div><a href="credits.html">Engine source and licences</a><a href="https://service.seiko.com.au/i/seiko/documents/technicalguides/7009A.pdf" target="_blank" rel="noreferrer">Seiko 7009A sheet ↗</a><a href="https://github.com/vacaboja/tg" target="_blank" rel="noreferrer">Timing reference ↗</a><a href="https://timegrapher.app/doc/05-rate-and-detail.html" target="_blank" rel="noreferrer">Signal limits ↗</a></div></footer>
+    <footer><p>Acoustic estimates, not a calibrated timegrapher. Audio-clock error affects rate; window spread shows repeatability. Confirm against elapsed time.</p><div><a href="credits.html">Engine source and licences</a><a href="https://service.seiko.com.au/i/seiko/documents/technicalguides/7009A.pdf" target="_blank" rel="noreferrer">Seiko 7009A sheet ↗</a><a href="https://github.com/vacaboja/tg" target="_blank" rel="noreferrer">Timing reference ↗</a><a href="https://timegrapher.app/doc/05-rate-and-detail.html" target="_blank" rel="noreferrer">Signal limits ↗</a></div></footer>
   </main>
-  <script type="module" src="app.mjs"></script>
+  <script type="module" src="app.mjs?v=site-layout"></script>
 </body>
 </html>

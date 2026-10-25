@@ -82,15 +82,6 @@ export function drawVintageMeter(ctx,w,h,view) {
   ctx.save();
   const dial=drawBackground(ctx,w,h,view.scale);
   drawNeedle(ctx,w,h,view.scale,view.rate,view.stale);
-  const firstRow=dial.top+47;
-  ctx.fillStyle='#fff1b9d9';ctx.fillRect(w*0.17,firstRow-19,w*0.69,METRIC_LINE*4+5);
-  view.metrics.forEach((metric,index)=>{
-    const y=firstRow+index*METRIC_LINE;
-    ctx.save();ctx.globalAlpha=metric.stale?0.4:1;ctx.fillStyle=INK;
-    ctx.textAlign='left';ctx.font=`${Math.max(12,w*0.039)}px DM Sans,sans-serif`;ctx.fillText(metric.label,w*0.2,y);
-    ctx.textAlign='right';ctx.font=`${Math.max(15,w*0.051)}px IBM Plex Mono,monospace`;ctx.fillText(metric.value,w*0.73,y);
-    ctx.textAlign='left';ctx.font='10px IBM Plex Mono,monospace';ctx.fillText(metric.unit,w*0.75,y);ctx.restore();
-  });
   const top=18,bottom=dial.apex.y-8,margin=13;
   const redLine=bottom-view.progress*(bottom-top);
   ctx.save();ctx.beginPath();ctx.rect(margin,top,w-margin*2,bottom-top);ctx.clip();
@@ -103,6 +94,15 @@ export function drawVintageMeter(ctx,w,h,view) {
   ctx.strokeStyle=RED;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,redLine);ctx.lineTo(w,redLine);ctx.stroke();
   ctx.fillStyle='#736542';ctx.font='9px IBM Plex Mono,monospace';ctx.textAlign='left';ctx.fillText('NOW',8,Math.max(11,redLine-6));
   ctx.textAlign='right';ctx.fillText('SWEEP ↑',w-8,h-8);
+  const firstRow=dial.top+47;
+  ctx.fillStyle='#fff1b9d9';ctx.fillRect(w*0.17,firstRow-19,w*0.69,METRIC_LINE*4+5);
+  view.metrics.forEach((metric,index)=>{
+    const y=firstRow+index*METRIC_LINE;
+    ctx.save();ctx.globalAlpha=metric.stale?0.4:1;ctx.fillStyle=INK;
+    ctx.textAlign='left';ctx.font=`${Math.max(12,w*0.039)}px DM Sans,sans-serif`;ctx.fillText(metric.label,w*0.2,y);
+    ctx.textAlign='right';ctx.font=`${Math.max(15,w*0.051)}px IBM Plex Mono,monospace`;ctx.fillText(metric.value,w*0.73,y);
+    ctx.textAlign='left';ctx.font='10px IBM Plex Mono,monospace';ctx.fillText(metric.unit,w*0.75,y);ctx.restore();
+  });
   if(!view.points.length) {
     ctx.textAlign='center';ctx.fillStyle='#736542';ctx.font='12px DM Sans,sans-serif';ctx.fillText('Waiting for measured beats',w/2,h*0.7);
   }

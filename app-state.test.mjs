@@ -284,7 +284,7 @@ test('tg supplies rate and beat error while amplitude waits for lift-angle confi
   const result=tgAnalyzer.analyze(watchAudio,NATIVE_RATE,{bph:21600,liftAngle:53});
   h.worker.answer(h.worker.next(Job.Analyze),{result});await settle();
   assert.equal(h.element('metric-rate').textContent,'+24.0');
-  assert.match(h.element('quality').textContent,/tg.*Repeatable/);
+  assert.match(h.element('quality').textContent,/Repeatable timing/);
   assert.ok(Number(h.element('metric-beat').textContent)>1);
   assert.equal(h.element('metric-amp').textContent,EMPTY);
   assert.match(h.element('note-amp').textContent,/Confirm lift angle/);
